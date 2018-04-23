@@ -21,68 +21,69 @@ connection.connect(function (err) {
 // Include the ids, names, and prices of products for sale.
 
 function dbSelectProduct() {
-  connection.query("SELECT  product_name, item_id, department_name, price, stock_qty FROM bamazon.products", 
-  function (err, res) {
-    if (err) throw eff;
-    console.table(res);
+  connection.query("SELECT  product_name, item_id, department_name, price, stock_qty FROM bamazon.products",
+    function (err, res) {
+      if (err) throw err;
+      console.table(res);
 
-    inquirer
-      .prompt([{
-          name: "product",
-          type: "rawlist",
-          // choices: [console.table('bamazon.products')]
-          choices: function () {
-            var productArray = [];
-            for (var i = 0; i < res.length; i++) {
-              // Product Item Id Push to product array
-              productArray.push(res[i].product_name);
-            }
-            // return product array
-            return productArray;
-          },
-          message: "Select a Product"
-        },
-        {
-          name: "qtySelect",
-          type: "input",
-          message: "How many would you like?",
-          validate: function (value) {
-            if (isNaN(value) === false) {
-              return true;
-            }
-            return false;
-          }
-        }
-      ])
-      .then(function (answer) {
-        var chosenProduct;
-        for (var i = 0; i < res.length; i++) {
-          if (res[i].product_name === answer.product) {
-            chosenProduct = res[i];
-          }
-        }
-        var stock_qty;
-        if (chosenProduct.stock_qty > parseInt(answer.qtySelect)) {
-          connection.query(
-            "UPDATE chosenProduct.stock_qty SET ? WHERE ?", [{
-                stock_qty: stock_qty - answer.qtySelect 
-              },
-              {
-                id: chosenProduct.id
+      inquirer
+        .prompt([{
+            name: "product",
+            type: "rawlist",
+            // choices: [console.table('bamazon.products')]
+            choices: function () {
+              var productArray = [];
+              for (var i = 0; i < res.length; i++) {
+                // Product Item Id Push to product array
+                productArray.push(res[i].product_name);
               }
-            ],
-            function (error) {
-              if (error) throw err;
-              console.log("Thank you for your purchase!");
-              dbSelectProduct();
+              // return product array
+              return productArray;
+            },
+            message: "Select a Product"
+          },
+          {
+            name: "qtySelect",
+            type: "input",
+            message: "How many would you like?",
+            validate: function (value) {
+              if (isNaN(value) === false) {
+                return true;
+              }
+              return false;
             }
-          );
-        } else {
-          return "There was not enough quantity in stock to fill your purchase!  Please try again.";
-          start();
-        }
-      });
-  });
+          }
+        ])
+        .then(function (answer) {
+          var chosenProduct;
+          for (var i = 0; i < res.length; i++) {
+            if (res[i].product_name === answer.product) {
+              chosenProduct = res[i];
+            }
+          }
+          console.log(chosenProduct)
+          var stock_qty = chosenProduct.stock_qty;
+          if (chosenProduct.stock_qty >= parseInt(answer.qtySelect)) {
+            connection.query(
+              "UPDATE bamazon.products SET ? WHERE ?", [{
+                  stock_qty: stock_qty - answer.qtySelect
+                },
+                {
+                  item_id: chosenProduct.item_id
+                }
+              ],
+              function (err) {
+                if (err) throw err;
+                console.log("Thank you for your purchase!");
+                dbSelectProduct();
+              }
+            );
+          } else {
+            return "There was not enough quantity in stock to fill your purchase!  Please try again.";
+            start();
+          }
+        });
+    });
 }
 
 
